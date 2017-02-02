@@ -7,13 +7,13 @@ readonly CRONFILE_TEMPLATE='/cron.template'
 readonly CRONFILE='/etc/cron.d/gad.cron'
 readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
 readonly LOGFILE='/var/log/gad.log'
-readonly GAD_CMD="gad -a $API_KEY -d $ZONE -r '$RECORD'"
+readonly GAD_CMD_HEAD="gad -a $API_KEY -d $ZONE -r"
 
 
 validate_config() {
-	[[ -z "$API_KEY" ]] && fail "API_KEY env var is missing"
-	[[ -z "$RECORD" ]] && fail "RECORD env var is missing"
-	[[ "$ZONE" =~ ^[a-z]+\.[a-z]+$ ]] || fail "ZONE env var appears to be in unexpected format: [$ZONE]"
+    [[ -z "$API_KEY" ]] && fail "API_KEY env var is missing"
+    [[ -z "$RECORD" ]] && fail "RECORD env var is missing"
+    [[ "$ZONE" =~ ^[a-z]+\.[a-z]+$ ]] || fail "ZONE env var appears to be in unexpected format: [$ZONE]"
 }
 
 
@@ -31,7 +31,7 @@ setup_cron() {
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  root  %s >> "%s"' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  root  %s "%s" >> "%s"' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
 }
 
 
@@ -49,6 +49,6 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-$GAD_CMD >> "$LOGFILE" || fail "gad startup execution failed with code [$?]"  # execute gad
+$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || fail "gad startup execution failed with code [$?]"  # execute gad
 
 exit 0
