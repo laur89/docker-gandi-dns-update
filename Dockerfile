@@ -3,7 +3,7 @@ MAINTAINER    Laur
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Seafile dependencies and system configuration
+# gandi-automatic-dns script dependencies and system configuration
 RUN apt-get update && \
     apt-get install -y --no-install-recommends dnsutils && \
     mkdir -p /etc/my_init.d && \
