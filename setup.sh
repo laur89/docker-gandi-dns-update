@@ -35,6 +35,18 @@ setup_cron() {
 }
 
 
+handle_startup_failure() {
+    local exit_code
+
+    readonly exit_code="$1"
+
+    echo -e "-> gad output:\n-------------------"
+    cat -- "$LOGFILE"
+    echo -e "-------------------"
+    fail "gad startup execution failed with code [$exit_code]"
+}
+
+
 fail() {
     local msg
     readonly msg="$1"
@@ -49,6 +61,6 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || fail "gad startup execution failed with code [$?]"  # execute gad
+$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || handle_startup_failure "$?"
 
 exit 0
