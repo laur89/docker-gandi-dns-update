@@ -26,12 +26,25 @@ check_dependencies() {
 }
 
 
+# make sure there's newline in the end!
 setup_cron() {
     # copy new template over previous cronfile:
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  root  %s "%s" >> "%s"' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  root  %s "%s" >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
+}
+
+
+handle_startup_failure() {
+    local exit_code
+
+    readonly exit_code="$1"
+
+    echo -e "-> gad output:\n-------------------"
+    cat -- "$LOGFILE"
+    echo -e "-------------------"
+    fail "gad startup execution failed with code [$exit_code]"
 }
 
 
@@ -49,6 +62,6 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || fail "gad startup execution failed with code [$?]"  # execute gad
+$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || handle_startup_failure "$?"
 
 exit 0
