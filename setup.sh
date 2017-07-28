@@ -4,10 +4,10 @@
 # also runs gad once, so it'd be always done first thing during container startup.
 
 readonly CRONFILE_TEMPLATE='/cron.template'
-readonly CRONFILE='/etc/cron.d/gad.cron'
+readonly CRONFILE='/etc/cron.d/gad'
 readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
 readonly LOGFILE='/var/log/gad.log'
-readonly GAD_CMD_HEAD="gad -a $API_KEY -d $ZONE -r"
+readonly GAD_CMD="gad -a $API_KEY -d $ZONE -r \"$RECORD\""
 
 
 validate_config() {
@@ -26,13 +26,12 @@ check_dependencies() {
 }
 
 
-# make sure there's newline in the end!
 setup_cron() {
     # copy new template over previous cronfile:
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  root  %s "%s" >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  root  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD" "$LOGFILE" >> "$CRONFILE"
 }
 
 
@@ -62,6 +61,6 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-$GAD_CMD_HEAD "$RECORD" >> "$LOGFILE" || handle_startup_failure "$?"
+eval "$GAD_CMD" >> "$LOGFILE" || handle_startup_failure "$?"
 
 exit 0
