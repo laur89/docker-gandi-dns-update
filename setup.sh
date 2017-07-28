@@ -26,12 +26,13 @@ check_dependencies() {
 }
 
 
+# make sure there's newline in the end!
 setup_cron() {
     # copy new template over previous cronfile:
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  root  %s "%s" >> "%s"' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  root  %s "%s" >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD" "$RECORD" "$LOGFILE" >> "$CRONFILE"
 }
 
 
