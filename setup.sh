@@ -20,7 +20,7 @@ validate_config() {
 check_dependencies() {
     local i
 
-    for i in dig gad; do
+    for i in gad dig openssl; do
         command -v "$i" >/dev/null || fail "[$i] not installed"
     done
 }
