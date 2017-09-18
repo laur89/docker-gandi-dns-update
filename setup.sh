@@ -13,7 +13,7 @@ readonly GAD_CMD="gad -a $API_KEY -d $ZONE -r \"$RECORD\""
 validate_config() {
     [[ -z "$API_KEY" ]] && fail "API_KEY env var is missing"
     [[ -z "$RECORD" ]] && fail "RECORD env var is missing"
-    [[ "$ZONE" =~ ^[a-z]+\.[a-z]+$ ]] || fail "ZONE env var appears to be in unexpected format: [$ZONE]"
+    [[ "$ZONE" =~ ^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$ ]] || fail "ZONE env var appears to be in unexpected format: [$ZONE]"
 }
 
 
