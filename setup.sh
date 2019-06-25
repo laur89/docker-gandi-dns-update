@@ -33,6 +33,8 @@ setup_cron() {
 
     # add cron entry:
     printf '%s  root  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD" "$LOGFILE" >> "$CRONFILE"
+    # alternatively pipe crontab drectly into crontab without writing into directory:
+    #printf '%s  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD" "$LOGFILE" | crontab - || fail "calling crontab failed with $?"
 }
 
 
