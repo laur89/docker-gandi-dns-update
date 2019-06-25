@@ -11,7 +11,7 @@ Used environment variables for configuration:
 - `API_KEY`: gandi api key
 - `DOMAIN`: managed domain (eg `example.com`)
 - `A_RECORDS`: space separated A records to update (eg `@ www blog`); optional if only `C_RECORDS` are wanted
-- `C_RECORDS`: space separated CNAME records to update (eg `www blog target.com`); optional if only `A_RECORDS` are wanted
+- `C_RECORDS`: space separated CNAME records to update (eg `www blog target.com`); optional if only `A_RECORDS` are wanted;
   note this takes semicolon-separated list of records in format `name1 name2 nameN target`, eg
   `ftp target1.example.com;blog web mail target2.example.com` would create CNAME record for `ftp` pointing to `target1.example.com`,
   and `blog, web, mail` subdomains pointing to `target2.example.com`
@@ -26,6 +26,6 @@ Example docker command:
 		-e API_KEY=your_gandi_api_key \
 		-e DOMAIN=example.com \
 		-e A_RECORDS='@ www' \
-        -e C_RECORDS='ftp example.com;blog web mail target2.example.com' \
+		-e C_RECORDS='ftp example.com;blog web mail target2.example.com' \
 		-e CRON_PATTERN='*/5 * * * *' \
 		layr/gandi-dns-update
