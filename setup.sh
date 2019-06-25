@@ -7,20 +7,21 @@ readonly CRONFILE_TEMPLATE='/cron.template'
 readonly CRONFILE='/etc/cron.d/gad'
 readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
 readonly LOGFILE='/var/log/gad.log'
-readonly GAD_CMD="gad -a $API_KEY -d $ZONE -r \"$RECORD\""
+readonly GAD_CMD="/gad -k $API_KEY -d $DOMAIN -a '$A_RECORDS' -c '$C_RECORDS' -F '$FORCE'"
 
 
 validate_config() {
     [[ -z "$API_KEY" ]] && fail "API_KEY env var is missing"
-    [[ -z "$RECORD" ]] && fail "RECORD env var is missing"
-    [[ "$ZONE" =~ ^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$ ]] || fail "ZONE env var appears to be in unexpected format: [$ZONE]"
+    [[ -z "$A_RECORDS" && -z "$C_RECORDS" ]] && fail "both A_RECORDS and C_RECORDS env vars are missing"
+    [[ "$DOMAIN" =~ ^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$ ]] || fail "DOMAIN env var appears to be in unexpected format: [$DOMAIN]"
+    [[ -n "$FORCE" ]] && ! [[ "$FORCE" =~ ^(true|false)$ ]] && fail "FORCE value, when given, can be either [true] or [false]"
 }
 
 
 check_dependencies() {
     local i
 
-    for i in gad dig openssl; do
+    for i in ping curl dig; do
         command -v "$i" >/dev/null || fail "[$i] not installed"
     done
 }
@@ -61,6 +62,7 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-eval "$GAD_CMD" >> "$LOGFILE" || handle_startup_failure "$?"
+# note for the first go, we force it:
+eval "$GAD_CMD -F true" >> "$LOGFILE" || handle_startup_failure "$?"
 
 exit 0

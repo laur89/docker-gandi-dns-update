@@ -1,3 +1,0 @@
-[submodule "gandi-automatic-dns"]
-	path = gandi-automatic-dns
-	url = https://github.com/brianpcurran/gandi-automatic-dns.git
