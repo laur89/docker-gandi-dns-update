@@ -1,10 +1,17 @@
 #!/bin/bash
 #
+readonly API_HEAD='https://dns.api.gandi.net/api/v5/domains'
 readonly LAST_KNOWN_IP_FILE='/tmp/.last_known_ip.tmp'
 
 
 update_records() {
     local record c_rec r target
+
+    if [[ "$OVERWRITE" == true ]]; then
+        curl --fail -X DELETE -H 'Content-Type: application/json' \
+               -H "X-Api-Key: $API_KEY" \
+               "$API_HEAD/$DOMAIN/records" || fail "deleting records for [$DOMAIN] failed with $?"
+    fi
 
     if [[ -n "$A_RECORDS" ]]; then
         for record in $A_RECORDS; do
@@ -12,8 +19,8 @@ update_records() {
         done
     fi
 
-    # note CNAME records are only pushed if force=true:
-    if [[ "$FORCE" == true && -n "$C_RECORDS" ]]; then
+    # note CNAME records are only pushed if ALWAYS_PUBLISH_CNAME=true:
+    if [[ "$ALWAYS_PUBLISH_CNAME" == true && -n "$C_RECORDS" ]]; then
         while IFS=';' read -ra c_rec; do
             for r in "${c_rec[@]}"; do
                 read -a r <<< "$r"
@@ -39,7 +46,7 @@ update_record() {
     curl --fail -X PUT -H 'Content-Type: application/json' \
         -H "X-Api-Key: $API_KEY" \
         -d "$record" \
-        "https://dns.api.gandi.net/api/v5/domains/$DOMAIN/records/$name/$type" || fail "pushing record update for [${name}-${type}] failed with $?"
+        "$API_HEAD/$DOMAIN/records/$name/$type" || fail "pushing record update for [${name}-${type}] failed with $?"
 }
 
 create_record() {
@@ -77,15 +84,12 @@ get_external_ip() {
     readonly timeout=1  # in sec
 
     # TODO: dns queries not working in some cases (some routers heck it up?)
-    ip="$(dig +short +time=$timeout myip.opendns.com @resolver1.opendns.com 2>/dev/null)" || {
-        fail "problems resolving our external ip with dig."
-    }
-
+    ip="$(dig +short +time=$timeout myip.opendns.com @resolver1.opendns.com 2>/dev/null)"
     [[ $? -eq 0 && -n "$ip" ]] && { echo "$ip"; return 0; }
 
     # couldn't resolve via dig, try other services...
     declare -a urls=(
-        'http://whatismyip.akamai.com/'
+        'http://whatismyip.akamai.com'
         'https://api.ipify.org'
         'icanhazip.com'
     )
@@ -111,7 +115,7 @@ fail() {
 # ================
 # Entry
 # ================
-while getopts "k:d:a:c:t:F:" opt; do
+while getopts "k:d:a:c:t:O:I:F:" opt; do
     case "$opt" in
         k)
             API_KEY="$OPTARG"
@@ -128,11 +132,17 @@ while getopts "k:d:a:c:t:F:" opt; do
         t)
             TTL="$OPTARG"
             ;;
+        O)
+            OVERWRITE="$OPTARG"
+            ;;
+        I)
+            PUBLISH_ONLY_ON_IP_CHANGE="$OPTARG"
+            ;;
         F)
-            FORCE="$OPTARG"
+            ALWAYS_PUBLISH_CNAME="$OPTARG"
             ;;
         *)
-            fail "icorrect option passed"
+            fail "incorrect option passed"
             ;;
     esac
 done
@@ -141,8 +151,8 @@ check_connection || fail "no connection, skipping"
 [[ -s "$LAST_KNOWN_IP_FILE" ]] && prev_ip="$(cat -- "$LAST_KNOWN_IP_FILE")"
 IP="$(get_external_ip)"
 
-if [[ "$FORCE" != true && "$prev_ip" == "$IP" ]]; then
-    echo "ip unchanged & force!=true, skipping"
+if [[ "$PUBLISH_ONLY_ON_IP_CHANGE" == true && "$prev_ip" == "$IP" ]]; then
+    echo "ip unchanged & PUBLISH_ONLY_ON_IP_CHANGE==true, skipping"
     exit 0
 fi
 
