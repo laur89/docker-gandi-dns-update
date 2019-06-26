@@ -82,7 +82,7 @@ build_comma_separated_list() {
 #
 # @returns {bool}  0 if we have healthy connection to $ip
 check_connection() {
-    local timeout
+    local ip timeout
 
     readonly ip='8.8.8.8'
     readonly timeout=2  # in seconds
