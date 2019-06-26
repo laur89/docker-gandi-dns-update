@@ -16,6 +16,7 @@ Used environment variables for configuration:
   `ftp target1.example.com;blog web mail target2.example.com` would create CNAME record for `ftp` pointing to `target1.example.com`,
   and `blog, web, mail` subdomains pointing to `target2.example.com`
 - `FORCE`: `true|false`; pass `true` if gandi api should be called even if your IP hasn't changed since last update; Optinal - defaults to `false`
+- `TTL`: dns entry ttl; Optional - defaults to 10800
 - `CRON_PATTERN`: cron pattern to be used to execute the script. Optional - execution defaults to every 15 min
 (eg `*/5 * * * *` to execute every 5 minutes)
 

@@ -139,7 +139,7 @@ fail() {
 # ================
 # Entry
 # ================
-while getopts "k:d:a:c:F:" opt; do
+while getopts "k:d:a:c:t:F:" opt; do
     case "$opt" in
         k)
             API_KEY="$OPTARG"
@@ -153,8 +153,11 @@ while getopts "k:d:a:c:F:" opt; do
         c)
             C_RECORDS="$OPTARG"
             ;;
+        t)
+            TTL="$OPTARG"
+            ;;
         F)
-            FORCE="${OPTARG:-'false'}"
+            FORCE="$OPTARG"
             ;;
         *)
             fail "icorrect option passed"

@@ -6,14 +6,16 @@
 readonly CRONFILE_TEMPLATE='/cron.template'
 readonly CRONFILE='/etc/cron.d/gad'
 readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
+readonly DEFAULT_TTL=10800
 readonly LOGFILE='/var/log/gad.log'
-readonly GAD_CMD="/gad -k $API_KEY -d $DOMAIN -a '$A_RECORDS' -c '$C_RECORDS' -F '$FORCE'"
+readonly GAD_CMD="/gad -k $API_KEY -d $DOMAIN -a '$A_RECORDS' -c '$C_RECORDS' -t '${TTL:-$DEFAULT_TTL}' -F '${FORCE:-'false'}'"
 
 
 validate_config() {
     [[ -z "$API_KEY" ]] && fail "API_KEY env var is missing"
     [[ -z "$A_RECORDS" && -z "$C_RECORDS" ]] && fail "both A_RECORDS and C_RECORDS env vars are missing"
     [[ "$DOMAIN" =~ ^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$ ]] || fail "DOMAIN env var appears to be in unexpected format: [$DOMAIN]"
+    [[ -n "$TTL" ]] && ! [[ "$TTL" =~ ^[0-9]+$ ]] && fail "TTL value, when given, needs to be int"
     [[ -n "$FORCE" ]] && ! [[ "$FORCE" =~ ^(true|false)$ ]] && fail "FORCE value, when given, can be either [true] or [false]"
 }
 
