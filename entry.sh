@@ -3,4 +3,4 @@
 /setup.sh || exit 1
 
 # start cron
-/usr/sbin/crond -f -l 8 -L /dev/stdout -c /etc/cron.d
+/usr/sbin/crond -f -l 8 -L /dev/stdout
