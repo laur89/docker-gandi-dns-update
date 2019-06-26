@@ -10,7 +10,7 @@ build_recors() {
 
     if [[ -n "$A_RECORDS" ]]; then
         for record in $A_RECORDS; do
-            records+="$(create_record "$record" A "$TTL" "$IP")"
+            records+=("$(create_record "$record" A "$TTL" "$IP")")
         done
     fi
 
@@ -24,7 +24,7 @@ build_recors() {
                 unset r[-1]
 
                 for record in "${r[@]}"; do
-                    records+="$(create_record "$record" CNAME "$TTL" "$target")"
+                    records+=("$(create_record "$record" CNAME "$TTL" "$target")")
                 done
             done
         done <<< "$C_RECORDS"
