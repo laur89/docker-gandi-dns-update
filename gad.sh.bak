@@ -3,12 +3,14 @@
 readonly LAST_KNOWN_IP_FILE='/tmp/.last_known_ip.tmp'
 
 
-update_records() {
-    local record c_rec r target
+build_recors() {
+    local records record c_rec r target
+
+    declare -a records
 
     if [[ -n "$A_RECORDS" ]]; then
         for record in $A_RECORDS; do
-            update_record "$(create_record "$IP")" "$record" A
+            records+=("$(create_record "$record" A "$IP")")
         done
     fi
 
@@ -22,32 +24,59 @@ update_records() {
                 unset r[-1]
 
                 for record in "${r[@]}"; do
-                    update_record "$(create_record "$target")" "$record" CNAME
+                    records+=("$(create_record "$record" CNAME "$target")")
                 done
             done
         done <<< "$C_RECORDS"
     fi
+
+    build_comma_separated_list "${records[@]}"
 }
 
-update_record() {
-    local record name type
 
-    record="$1"
-    name="$2"
-    type="$3"
+update_records() {
+    local records
 
+    records="$(build_recors)"
+    # note following call replaces _all_ existing records with sent data:
     curl --fail -X PUT -H 'Content-Type: application/json' \
         -H "X-Api-Key: $API_KEY" \
-        -d "$record" \
-        "https://dns.api.gandi.net/api/v5/domains/$DOMAIN/records/$name/$type" || fail "pushing record update for [${name}-${type}] failed with $?"
+        -d "{\"items\": [$records]}" \
+        "https://dns.api.gandi.net/api/v5/domains/$DOMAIN/records" || fail "pushing record updates failed with $?"
 }
 
 create_record() {
-    local value
+    local name type values
 
-    value="$1"
+    name="$1"
+    type="$2"
+    values="$3"
 
-    printf '{"rrset_ttl": %d,"rrset_values": ["%s"]}' "$TTL" "$value" || fail "printf failed with $?"
+    printf '{"rrset_name": "%s",
+      "rrset_type": "%s",
+      "rrset_ttl": %d,
+      "rrset_values": ["%s"]}' "$name" "$type" "$TTL" "$values" || fail "printf failed with $?"
+}
+
+
+# Builds comma separated list.
+#
+# @param {string...}   list of elements to build string from.
+#
+# @returns {string}  comma separated list, eg "a,b,c"
+build_comma_separated_list() {
+    local element separator list
+    readonly separator=','  # list separator
+
+    # TODO: return empty string instead?
+    [[ "$#" -eq 0 ]] && fail "args required"
+
+    for element in "$@"; do
+        list+="$element$separator"
+    done
+
+    echo "${list:0:$(( ${#list} - ${#separator} ))}"
+    return 0
 }
 
 # Checks whether we have outside connection.
