@@ -9,8 +9,8 @@ readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
 readonly DEFAULT_TTL=10800
 readonly LOGFILE='/var/log/gad.log'
 readonly GAD_CMD="/gad -k '$API_KEY' -d '$DOMAIN' -a '$A_RECORDS' \
-  -c '$C_RECORDS' -t '${TTL:-$DEFAULT_TTL}' -O '${OVERWRITE:-'false'}' \
-  -I '${PUBLISH_ONLY_ON_IP_CHANGE:-'true'}'"
+  -c '$C_RECORDS' -t '${TTL:-$DEFAULT_TTL}' -O '${OVERWRITE:-false}' \
+  -I '${PUBLISH_ONLY_ON_IP_CHANGE:-true}'"
 
 
 validate_config() {
@@ -24,7 +24,7 @@ validate_config() {
     [[ -n "$OVERWRITE" ]] && ! [[ "$OVERWRITE" =~ ^(true|false)$ ]] && fail "OVERWRITE value, when given, can be either [true] or [false]"
 
     [[ "$OVERWRITE" == true ]] && ALWAYS_PUBLISH_CNAME=true  # otherwise we'd lose CNAME records from 2nd run onwards;
-    ALWAYS_PUBLISH_CNAME="${ALWAYS_PUBLISH_CNAME:-'false'}"
+    ALWAYS_PUBLISH_CNAME="${ALWAYS_PUBLISH_CNAME:-false}"
 }
 
 

@@ -23,10 +23,12 @@ update_records() {
     if [[ "$ALWAYS_PUBLISH_CNAME" == true && -n "$C_RECORDS" ]]; then
         while IFS=';' read -ra c_rec; do
             for r in "${c_rec[@]}"; do
-                read -a r <<< "$r"
+                read -ra r <<< "$r"
                 [[ "${#r[@]}" -lt 2 ]] && fail "CNAME record config needs to contain at least 2 elements - source & target"
                 target="${r[-1]}"
                 unset r[-1]
+                # check for dot: (https://stackexchange.github.io/dnscontrol/why-the-dot)
+                [[ "$target" != *. && "$target" == *.* ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
 
                 for record in "${r[@]}"; do
                     update_record "$(create_record "$target")" "$record" CNAME
