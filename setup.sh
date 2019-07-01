@@ -24,7 +24,6 @@ validate_config() {
     [[ -n "$OVERWRITE" ]] && ! [[ "$OVERWRITE" =~ ^(true|false)$ ]] && fail "OVERWRITE value, when given, can be either [true] or [false]"
 
     [[ "$OVERWRITE" == true ]] && ALWAYS_PUBLISH_CNAME=true  # otherwise we'd lose CNAME records from 2nd run onwards;
-    ALWAYS_PUBLISH_CNAME="${ALWAYS_PUBLISH_CNAME:-false}"
 }
 
 
@@ -42,12 +41,12 @@ setup_cron() {
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '$ALWAYS_PUBLISH_CNAME'" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" >> "$CRONFILE"
     # test entry:
     #printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" 'echo "running cron @ $(date)"' "$LOGFILE" >> "$CRONFILE"
 
     # alternatively pipe crontab drectly into crontab without writing into directory:
-    #printf '%s  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '$ALWAYS_PUBLISH_CNAME'" "$LOGFILE" | crontab - || fail "calling crontab failed with $?"
+    #printf '%s  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" | crontab - || fail "calling crontab failed with $?"
 }
 
 

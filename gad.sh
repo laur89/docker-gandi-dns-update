@@ -28,7 +28,7 @@ update_records() {
                 target="${r[-1]}"
                 unset r[-1]
                 # check for dot: (https://stackexchange.github.io/dnscontrol/why-the-dot)
-                [[ "$target" != *. && "$target" == *.* ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
+                [[ "$target" == *.* && "$target" != *. ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
 
                 for record in "${r[@]}"; do
                     update_record "$(create_record "$target")" "$record" CNAME
@@ -86,14 +86,15 @@ get_external_ip() {
     readonly timeout=1  # in sec
 
     # TODO: dns queries not working in some cases (some routers heck it up?)
-    ip="$(dig +short +time=$timeout myip.opendns.com @resolver1.opendns.com 2>/dev/null)"
+    ip="$(dig @resolver1.opendns.com ANY myip.opendns.com +short +timeout=$timeout 2>/dev/null)"
     [[ $? -eq 0 && -n "$ip" ]] && { echo "$ip"; return 0; }
 
     # couldn't resolve via dig, try other services...
     declare -a urls=(
         'http://whatismyip.akamai.com'
         'https://api.ipify.org'
-        'icanhazip.com'
+        'http://icanhazip.com'
+        'https://diagnostic.opendns.com/myip'
     )
 
     for url in "${urls[@]}"; do
