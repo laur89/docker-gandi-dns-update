@@ -81,7 +81,7 @@ check_connection() {
 #
 # @returns {string}  our external ip.
 get_external_ip() {
-    local ip timeout urls url
+    local ip timeout url
 
     readonly timeout=1  # in sec
 
@@ -90,14 +90,11 @@ get_external_ip() {
     [[ $? -eq 0 && -n "$ip" ]] && { echo "$ip"; return 0; }
 
     # couldn't resolve via dig, try other services...
-    declare -a urls=(
-        'http://whatismyip.akamai.com'
-        'https://api.ipify.org'
-        'http://icanhazip.com'
-        'https://diagnostic.opendns.com/myip'
-    )
-
-    for url in "${urls[@]}"; do
+    for url in \
+            'http://whatismyip.akamai.com' \
+            'https://api.ipify.org' \
+            'http://icanhazip.com' \
+            'https://diagnostic.opendns.com/myip'; do
         ip="$(curl --fail -s "$url")" && [[ -n "$ip" ]] && break
         unset ip
     done
