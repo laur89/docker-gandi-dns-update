@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # installs cron file executing gad script at required interval;
 # also runs gad once, so it'd be always done first thing during container startup.
@@ -8,7 +8,7 @@ readonly CRONFILE='/var/spool/cron/crontabs/root'
 readonly DEFAULT_CRON_PATTERN='*/15 * * * *'
 readonly DEFAULT_TTL=10800
 readonly LOGFILE='/var/log/gad.log'
-readonly GAD_CMD="/gad -k '$API_KEY' -d '$DOMAIN' -a '$A_RECORDS' \
+readonly GAD_CMD_HEAD="/gad.sh -k '$API_KEY' -d '$DOMAIN' -a '$A_RECORDS' \
   -c '$C_RECORDS' -t '${TTL:-$DEFAULT_TTL}' -O '${OVERWRITE:-false}' \
   -I '${PUBLISH_ONLY_ON_IP_CHANGE:-true}'"
 
@@ -41,12 +41,12 @@ setup_cron() {
     cp -- "$CRONFILE_TEMPLATE" "$CRONFILE" || fail "copying cron template failed"
 
     # add cron entry:
-    printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" >> "$CRONFILE"
+    printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" >> "$CRONFILE"
     # test entry:
     #printf '%s  %s >> "%s" 2>&1\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" 'echo "running cron @ $(date)"' "$LOGFILE" >> "$CRONFILE"
 
     # alternatively pipe crontab drectly into crontab without writing into directory:
-    #printf '%s  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" | crontab - || fail "calling crontab failed with $?"
+    #printf '%s  %s >> "%s"\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" "$GAD_CMD_HEAD -F '${ALWAYS_PUBLISH_CNAME:-false}'" "$LOGFILE" | crontab - || fail "calling crontab failed with $?"
 }
 
 
@@ -76,7 +76,8 @@ fail() {
 validate_config
 check_dependencies
 setup_cron
-# note for the first go, we force CNAME updates:
-eval "$GAD_CMD -F true" >> "$LOGFILE" 2>&1 || handle_startup_failure "$?"
+
+# note for the first run, we force CNAME updates:
+eval "$GAD_CMD_HEAD -F true" >> "$LOGFILE" 2>&1 || handle_startup_failure "$?"
 
 exit 0

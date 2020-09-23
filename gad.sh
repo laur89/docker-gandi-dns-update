@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 readonly API_HEAD='https://dns.api.gandi.net/api/v5/domains'
 readonly LAST_KNOWN_IP_FILE='/tmp/.last_known_ip.tmp'
