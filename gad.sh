@@ -9,8 +9,7 @@ update_records() {
 
     if [[ "$OVERWRITE" == true ]]; then
         echo "deleting existing records..."
-        curl -s --fail -X DELETE -H 'Content-Type: application/json' \
-               -H "X-Api-Key: $API_KEY" \
+        curl "${CURL_FLAGS[@]}" -X DELETE \
                "$API_HEAD/$DOMAIN/records" || fail "deleting records for [$DOMAIN] failed with $?"
     fi
 
@@ -47,9 +46,7 @@ update_record() {
     type="$3"
 
     echo "updating record [${name}-${type}]..."
-    curl -s --fail -X PUT -H 'Content-Type: application/json' \
-        -H "X-Api-Key: $API_KEY" \
-        -d "$record" \
+    curl "${CURL_FLAGS[@]}" -X PUT -d "$record" \
         "$API_HEAD/$DOMAIN/records/$name/$type" || fail "pushing record update for [${name}-${type}] failed with $?"
 }
 
@@ -163,6 +160,15 @@ if [[ "$prev_ip" == "$IP" ]]; then
 else
     echo "new IP: [$IP], updating records..."
 fi
+
+CURL_FLAGS=(
+    -w '\n'
+    --max-time 4
+    --connect-timeout 2
+    -H 'Content-Type: application/json'
+    -H "X-Api-Key: $API_KEY"
+    -s -S --fail
+)
 
 update_records
 
