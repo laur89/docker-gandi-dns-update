@@ -8,7 +8,8 @@ update_records() {
     local record c_rec r target
 
     if [[ "$OVERWRITE" == true ]]; then
-        curl --fail -X DELETE -H 'Content-Type: application/json' \
+        echo "deleting existing records..."
+        curl -s --fail -X DELETE -H 'Content-Type: application/json' \
                -H "X-Api-Key: $API_KEY" \
                "$API_HEAD/$DOMAIN/records" || fail "deleting records for [$DOMAIN] failed with $?"
     fi
@@ -45,7 +46,8 @@ update_record() {
     name="$2"
     type="$3"
 
-    curl --fail -X PUT -H 'Content-Type: application/json' \
+    echo "updating record [${name}-${type}]..."
+    curl -s --fail -X PUT -H 'Content-Type: application/json' \
         -H "X-Api-Key: $API_KEY" \
         -d "$record" \
         "$API_HEAD/$DOMAIN/records/$name/$type" || fail "pushing record update for [${name}-${type}] failed with $?"
@@ -151,12 +153,18 @@ check_connection || fail "no connection, skipping"
 [[ -s "$LAST_KNOWN_IP_FILE" ]] && prev_ip="$(cat -- "$LAST_KNOWN_IP_FILE")"
 IP="$(get_external_ip)"
 
-if [[ "$PUBLISH_ONLY_ON_IP_CHANGE" == true && "$prev_ip" == "$IP" ]]; then
-    echo "ip unchanged & PUBLISH_ONLY_ON_IP_CHANGE==true, skipping"
-    exit 0
+if [[ "$prev_ip" == "$IP" ]]; then
+    if [[ "$PUBLISH_ONLY_ON_IP_CHANGE" == true ]]; then
+        echo "ip unchanged & PUBLISH_ONLY_ON_IP_CHANGE==true, skipping update"
+        exit 0
+    fi
+
+    echo "ip unchanged, but PUBLISH_ONLY_ON_IP_CHANGE==false - updating records..."
+else
+    echo "new IP: [$IP], updating records..."
 fi
 
 update_records
 
-[[ "$prev_ip" != "$IP" ]] && echo -n "$IP" > "$LAST_KNOWN_IP_FILE"  # only store if update has succeeded
+[[ "$prev_ip" != "$IP" ]] && echo -n "$IP" > "$LAST_KNOWN_IP_FILE"  # only store if update has succeeded!
 exit 0
