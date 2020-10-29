@@ -82,19 +82,20 @@ check_connection() {
 get_external_ip() {
     local ip timeout url
 
-    readonly timeout=1  # in sec
+    readonly timeout=2  # in sec
 
     # TODO: dns queries not working in some cases (some routers heck it up?)
     ip="$(dig @resolver1.opendns.com ANY myip.opendns.com +short +timeout=$timeout 2>/dev/null)"
-    [[ $? -eq 0 && -n "$ip" ]] && { echo "$ip"; return 0; }
+    [[ $? -eq 0 && -n "$ip" ]] && is_valid_ip "$ip" && { echo "$ip"; return 0; }
 
     # couldn't resolve via dig, try other services...
     for url in \
+            'https://diagnostic.opendns.com/myip' \
             'http://whatismyip.akamai.com' \
             'https://api.ipify.org' \
-            'http://icanhazip.com' \
-            'https://diagnostic.opendns.com/myip'; do
-        ip="$(curl --fail -s "$url")" && [[ -n "$ip" ]] && break
+            'https://icanhazip.com/' \
+                ; do
+        ip="$(curl --fail --max-time "$timeout" --connect-timeout 1 -s "$url")" && [[ -n "$ip" ]] && is_valid_ip "$ip" && break
         unset ip
     done
 
@@ -108,6 +109,29 @@ fail() {
     readonly msg="$1"
     echo -e "\n\n    ERROR: $msg\n\n"
     exit 1
+}
+
+
+# Checks whether given IP is a valid ipv4.
+# from https://stackoverflow.com/a/13777424
+#
+# @param {string}  ip   ip which validity to test.
+#
+# @returns {bool}  true, if provided IP was a valid ipv4.
+is_valid_ip() {
+    local ip
+
+    ip="$1"
+
+    if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        readarray -t -d '.' ip <<< "$ip"
+
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        return $?
+    fi
+
+    return 1
 }
 
 
