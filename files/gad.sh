@@ -189,6 +189,7 @@ CURL_FLAGS=(
     -w '\n'
     --max-time 4
     --connect-timeout 2
+    --retry 1
     -H 'Content-Type: application/json'
     -H "X-Api-Key: $API_KEY"
     -s -S --fail
