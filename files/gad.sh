@@ -94,6 +94,7 @@ get_external_ip() {
             'http://whatismyip.akamai.com' \
             'https://api.ipify.org' \
             'https://icanhazip.com/' \
+            'https://ipecho.net/plain' \
                 ; do
         ip="$(curl --fail --max-time "$timeout" --connect-timeout 1 -s "$url")" && [[ -n "$ip" ]] && is_valid_ip "$ip" && break
         unset ip
