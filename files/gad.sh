@@ -21,20 +21,19 @@ update_records() {
 
     # note CNAME records are only pushed if ALWAYS_PUBLISH_CNAME=true:
     if [[ "$ALWAYS_PUBLISH_CNAME" == true && -n "$C_RECORDS" ]]; then
-        while IFS=';' read -ra c_rec; do
-            for r in "${c_rec[@]}"; do
-                read -ra r <<< "$r"
-                [[ "${#r[@]}" -lt 2 ]] && fail "CNAME record config needs to contain at least 2 elements - source & target"
-                target="${r[-1]}"
-                unset r[-1]
-                # check for dot: (https://stackexchange.github.io/dnscontrol/why-the-dot)
-                [[ "$target" == *.* && "$target" != *. ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
+        readarray -t -d ';' c_rec <<< "$C_RECORDS"
+        for r in "${c_rec[@]}"; do
+            read -ra r <<< "$r"
+            [[ "${#r[@]}" -lt 2 ]] && fail "CNAME record config needs to contain at least 2 elements - source & target"
+            target="${r[-1]}"
+            unset r[-1]  # pop the target
+            # check for dot: (https://stackexchange.github.io/dnscontrol/why-the-dot)
+            [[ "$target" == *.* && "$target" != *. ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
 
-                for record in "${r[@]}"; do
-                    update_record "$(create_record "$target")" "$record" CNAME
-                done
+            for record in "${r[@]}"; do
+                update_record "$(create_record "$target")" "$record" CNAME
             done
-        done <<< "$C_RECORDS"
+        done
     fi
 }
 
@@ -82,19 +81,24 @@ check_connection() {
 get_external_ip() {
     local ip timeout url
 
-    readonly timeout=1  # in sec
+    readonly timeout=2  # in sec
 
     # TODO: dns queries not working in some cases (some routers heck it up?)
-    ip="$(dig @resolver1.opendns.com ANY myip.opendns.com +short +timeout=$timeout 2>/dev/null)"
-    [[ $? -eq 0 && -n "$ip" ]] && { echo "$ip"; return 0; }
+    ip="$(dig +short +timeout=$timeout @resolver1.opendns.com myip.opendns.com 2>/dev/null)"
+    [[ $? -eq 0 && -n "$ip" ]] && is_valid_ip "$ip" && { echo "$ip"; return 0; }
 
     # couldn't resolve via dig, try other services...
     for url in \
+            'https://diagnostic.opendns.com/myip' \
             'http://whatismyip.akamai.com' \
+            'https://checkip.amazonaws.com' \
             'https://api.ipify.org' \
-            'http://icanhazip.com' \
-            'https://diagnostic.opendns.com/myip'; do
-        ip="$(curl --fail -s "$url")" && [[ -n "$ip" ]] && break
+            'https://icanhazip.com/' \
+            'https://ipecho.net/plain' \
+            'https://ipinfo.io/ip' \
+                ; do
+        ip="$(curl --fail --max-time "$timeout" --connect-timeout 1 -s "$url")" && \
+            [[ -n "$ip" ]] && is_valid_ip "$ip" && break
         unset ip
     done
 
@@ -108,6 +112,29 @@ fail() {
     readonly msg="$1"
     echo -e "\n\n    ERROR: $msg\n\n"
     exit 1
+}
+
+
+# Checks whether given IP is a valid ipv4.
+# from https://stackoverflow.com/a/13777424
+#
+# @param {string}  ip   ip which validity to test.
+#
+# @returns {bool}  true, if provided IP was a valid ipv4.
+is_valid_ip() {
+    local ip
+
+    ip="$1"
+
+    if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        readarray -t -d '.' ip <<< "$ip"
+
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        return $?
+    fi
+
+    return 1
 }
 
 
@@ -161,10 +188,12 @@ else
     echo "new IP: [$IP], updating records..."
 fi
 
+# curl flags used when querying gandi api:
 CURL_FLAGS=(
     -w '\n'
     --max-time 4
     --connect-timeout 2
+    --retry 1
     -H 'Content-Type: application/json'
     -H "X-Api-Key: $API_KEY"
     -s -S --fail
