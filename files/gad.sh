@@ -27,7 +27,7 @@ update_records() {
             [[ "${#r[@]}" -lt 2 ]] && fail "CNAME record config needs to contain at least 2 elements - source & target"
             target="${r[-1]}"
             unset r[-1]  # pop the target
-            # check for dot: (https://stackexchange.github.io/dnscontrol/why-the-dot)
+            # check for dot: (https://docs.dnscontrol.org/language-reference/why-the-dot)
             [[ "$target" == *.* && "$target" != *. ]] && fail "ambiguous target [$target]; forgot to add a dot to the end?"
 
             for record in "${r[@]}"; do
