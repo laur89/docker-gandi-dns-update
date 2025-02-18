@@ -1,5 +1,4 @@
 FROM          alpine:3
-MAINTAINER    Laur Aliste
 
 ADD files/*   /
 RUN apk add --no-cache curl bind-tools bash && \
